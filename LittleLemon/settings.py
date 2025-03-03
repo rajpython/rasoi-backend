@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "restaurant"
+    "restaurante"
 ]
 
 MIDDLEWARE = [
@@ -126,11 +126,11 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 STATICFILES_DIRS = [
-    'restaurant/static',
+    'restaurante/static',
 ]
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = "restaurant/static/"
+STATIC_URL = "restaurante/static/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
