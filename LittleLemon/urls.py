@@ -17,8 +17,36 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
+from restaurante import views
+
+from rest_framework.routers import DefaultRouter
+
+# router = DefaultRouter()
+
+# router.register(r'tables', views.BookingViewSet)
+# router.register(r'users', views.UserViewSet)
+
+
+
+# urlpatterns = [
+#     path("admin/", admin.site.urls),
+#     path("restaurante/", include('restaurante.urls')),
+#     path('restaurante/booking/', include(router.urls)),
+#     path('', include(router.urls))
+# ]
+
+# Router for BookingViewSet
+booking_router = DefaultRouter()
+booking_router.register(r'tables', views.BookingViewSet, basename='booking')
+
+# Router for UserViewSet
+user_router = DefaultRouter()
+user_router.register(r'users', views.UserViewSet, basename='user')
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("restaurante/", include('restaurante.urls'))
+    path('admin/', admin.site.urls),
+    path('restaurante/', include('restaurante.urls')),
+    path('restaurante/booking/', include(booking_router.urls)),
+    path('accounts/', include(user_router.urls)),
+    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 ]
