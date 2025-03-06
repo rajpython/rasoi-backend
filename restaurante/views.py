@@ -24,12 +24,12 @@ class SingleMenuItemView(RetrieveUpdateAPIView, DestroyAPIView):
 class BookingViewSet(viewsets.ModelViewSet):
     queryset = Booking.objects.all()
     serializer_class = BookingSerializer
-    # permission_classes = [permissions.IsAuthenticated] 
-    permission_classes = [permissions.AllowAny] 
+    permission_classes = [permissions.IsAuthenticated] 
+    # permission_classes = [permissions.AllowAny] 
 
 class UserViewSet(viewsets.ModelViewSet):
-   queryset = User.objects.all()
+   queryset = User.objects.all().order_by('id')
    serializer_class = UserSerializer
-#   permission_classes = [permissions.IsAuthenticated] 
-   permission_classes = [permissions.AllowAny] 
+   permission_classes = [permissions.IsAuthenticated] 
+#    permission_classes = [permissions.AllowAny] 
 
