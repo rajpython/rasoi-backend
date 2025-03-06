@@ -20,6 +20,7 @@ from django.urls import path, include
 from restaurante import views
 
 from rest_framework.routers import DefaultRouter
+from rest_framework.authtoken.views import obtain_auth_token
 
 # router = DefaultRouter()
 
@@ -45,8 +46,11 @@ user_router.register(r'users', views.UserViewSet, basename='user')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('restaurante/', include('restaurante.urls')),
+    path('restaurante/', include('restaurante.urls', namespace='restaurante')),
     path('restaurante/booking/', include(booking_router.urls)),
     path('accounts/', include(user_router.urls)),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    path('auth/', include('djoser.urls')),
+    path('auth/', include('djoser.urls.authtoken')),
+    path('api-token-auth/', obtain_auth_token),
 ]
