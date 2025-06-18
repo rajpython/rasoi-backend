@@ -22,11 +22,37 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "django-insecure-7sha!&uec*hmcois^#d3!e(9q0#2pu^)yw_jp&-107x1l_9z_*"
 
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'DhannoBannoKiRasoi@gmail.com'
+
+
+
+# EMAIL_HOST_PASSWORD = "rwla oqyn ymwh yxiz"
+EMAIL_HOST_PASSWORD = "ttgp usxc qvee kwfq"
+# settings.py
+
+import os
+
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+BACKEND_URL = os.environ.get('BACKEND_URL', 'http://localhost:9100')
+
+# FRONTEND_URL = "http://localhost:3000"  # or production URL
+
+
+
+
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:9100',
+]
 
 # Application definition
 
@@ -37,6 +63,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_filters",
+    "corsheaders",
     "restaurante",
     "rest_framework",
     "djoser",
@@ -47,6 +75,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware", 
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -78,11 +107,11 @@ WSGI_APPLICATION = "LittleLemon.wsgi.application"
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'reservations',
+        'NAME': 'rasoi_db',
         'HOST' : '127.0.0.1',
         'PORT' : '5432',
-        'USER' : 'admindjango',
-        'PASSWORD' : 'employee@123!',
+        'USER' : 'rasoi_user',
+        'PASSWORD' : 'gold1961',
     }
 }
 
@@ -126,6 +155,9 @@ STATICFILES_DIRS = [
 
 STATIC_URL = "restaurante/static/"
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
@@ -140,7 +172,7 @@ REST_FRAMEWORK = {
         #'rest_framework_xml.renderers.XMLRenderer',
     ],
     'DEFAULT_FILTER_BACKENDS': [
-        # 'django_filters.rest_framework.DjangoFilterBackend',
+        'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.OrderingFilter',
         'rest_framework.filters.SearchFilter',
     ],
@@ -153,18 +185,23 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_AUTHENTICATION_CLASSES':[
         'rest_framework.authentication.TokenAuthentication',
-        "rest_framework.authentication.SessionAuthentication",
+        # "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
         "rest_framework.permissions.DjangoModelPermissions",
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '2/minute',
-        'user': '100/minute',
+        'anon': '100/minute',
+        'user': '1000/minute',
     },
 }
 
 DJOSER = {
-    'USER_ID_FIELD' : 'username'
+    'USER_ID_FIELD': 'username'
 }
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+]
+CORS_ALLOW_ALL_ORIGINS = True

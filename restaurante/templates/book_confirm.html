@@ -1,0 +1,153 @@
+<!-- 
+
+
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #ffffff; margin: 0; padding: 0; }
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f4f4f4;
+      border-radius: 8px;
+    }
+    .heading {
+      font-size: 22px;
+      margin-bottom: 15px;
+      color: #333333;
+    }
+    .details {
+      font-size: 16px;
+      margin-bottom: 1rem;
+      color: #444444;
+    }
+    .ref {
+      font-weight: bold;
+      color: #2c3e50;
+    }
+    .link-box {
+      margin-top: 20px;
+      padding: 12px;
+      background-color: #e8f5e9;
+      border-left: 4px solid #388e3c;
+      font-size: 18px; 
+      border-radius: 6px;
+    }
+    .link-box a {
+      color: #1a73e8;
+      text-decoration: none;
+      font-size: 18px; 
+      font-weight: bold;
+    }
+    .footer {
+      margin-top: 25px;
+      font-size: 26px;
+      font-style: oblique;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <p class="heading">My dear Chatore(e),</p>
+    <p class="heading">Your table has been successfully reserved.</p>
+
+    <div class="details">
+      <p><strong>Date:</strong> {{ reservation_date }}</p>
+      <p><strong>Time:</strong> {{ reservation_time }}</p>
+      <p><strong>Guests:</strong> {{ no_of_guests }}</p>
+      <p><strong>Occasion:</strong> {{ occasion }}</p>
+      <p class="ref">Reference #: {{ reference_number }}</p>
+    </div>
+    <p class="footer">Aiho a Khaiho ta chat chat ke baura jaiho!</p>
+
+
+    <div class="link-box">
+      You can <a href={{ manage_link }}>manage or cancel your reservation</a> at any time.
+    </div>
+
+    <p class="heading">Sachchee Dukaan Khatte Pakwaan!</p>
+    <p class="footer">Banno di Dhanno</p>
+  </div>
+  
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Reservation Confirmation</title>
+  </head>
+  <body style="background:#f6f8fa;margin:0;padding:0;">
+    <table align="center" width="100%" bgcolor="#f6f8fa">
+      <tr>
+        <td>
+          <table align="center" width="500" style="background:#fff;border-radius:10px;box-shadow:0 4px 20px #cfd8dc40;margin:36px auto 24px auto;">
+            <tr>
+              <td style="padding:32px 38px 28px 38px;font-family:'Segoe UI',Roboto,Arial,sans-serif;">
+                <!-- LOGO/IMAGE -->
+                <div style="text-align:center;margin-bottom:6px;">
+                  <!-- <img src="http://127.0.0.1:9100/restaurante/static/img/bannocopy.jpg"
+                       alt="Dhanno Banno Ki Rasoi"
+                       style="width:210px;max-width:45vw;border-radius:18px;box-shadow:0 2px 10px #d5d5d5;" /> -->
+                  <img src="{{photo_link}}"
+                       alt="Dhanno Banno Ki Rasoi"
+                       style="width:210px;max-width:45vw;border-radius:18px;box-shadow:0 2px 10px #d5d5d5;" />
+                </div>
+                <!-- HEADER/LOGO TEXT -->
+                <div style="text-align:center;">
+                  <h1 style="margin-bottom:12px;font-size:1.9em;color:#226642;letter-spacing:1.5px;">Dhanno Banno Ki Rasoi</h1>
+                </div>
+
+                <!-- GREETING -->
+              
+                <p style="font-size:1.15em;margin:6px 0 16px 0;color:#444;">
+                  Your table reservation is confirmed!
+                </p>
+
+                <!-- RESERVATION DETAILS -->
+                <div style="margin:12px 0 20px 0;font-size:1.05em;color:#363c4a;">
+                  <p><strong>Date:</strong> {{ reservation_date }}</p>
+                  <p><strong>Time:</strong> {{ reservation_time }}</p>
+                  <p><strong>Guests:</strong> {{ no_of_guests }}</p>
+                  <p><strong>Occasion:</strong> {{ occasion }}</p>
+                  <p><strong>Reference #:</strong> <span style="color:#226642;font-weight:bold;">{{ reference_number }}</span></p>
+                </div>
+
+                <!-- MANAGE LINK -->
+                <div style="margin-top:24px;padding:14px 18px;background-color:#e8f5e9;border-left:5px solid #2e7d32;border-radius:8px;">
+                  <p style="font-size:1.07em;margin:0;">
+                    You can <a href="{{ manage_link }}" style="color:#1a73e8;text-decoration:none;font-weight:bold;">manage or cancel your reservation</a> at any time.
+                  </p>
+                </div>
+
+                <!-- CLOSING NOTE -->
+                <div style="margin-top:24px;margin-bottom:28px;font-size:1.1em;line-height:1.5;color:#666;">
+                  <strong><em>Aiho, a khaiho ta chat chat ke baura jaiho!</em></strong><br/>
+                  We’re prepping your table with love, spices, and a touch of filmy flair.
+                </div>
+
+                <div style="text-align:center;color:#444;font-size:1.05em;margin-top:12px;">
+                  <strong>Sachchee Dukaan Khatte Pakwaan!</strong><br/>
+                  <em>- Banno di Dhanno</em>
+                </div>
+
+                <div style="font-size:0.97em;color:#888;margin-top:20px;">
+                  Have questions? Reply to this email or call us at +91 8299123339.
+                </div>
+              </td>
+            </tr>
+          </table>
+
+          <!-- FOOTER -->
+          <div style="text-align:center;color:#bdbdbd;font-size:0.95em;margin:0 auto 18px auto;">
+            &copy; {{ now|date:"Y" }} Dhanno Banno Ki Rasoi. All rights reserved.
+          </div>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
