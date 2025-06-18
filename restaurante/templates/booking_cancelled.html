@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #ffffff; margin: 0; padding: 0; }
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f4f4f4;
+      border-radius: 8px;
+    }
+    .heading {
+      font-size: 22px;
+      margin-bottom: 15px;
+      color: #333333;
+    }
+    .details {
+      font-size: 16px;
+      margin-bottom: 1rem;
+      color: #444444;
+    }
+    .ref {
+      font-weight: bold;
+      color: #2c3e50;
+    }
+    .link-box {
+      margin-top: 20px;
+      padding: 12px;
+      background-color: #e8f5e9;
+      border-left: 4px solid #388e3c;
+      font-size: 18px; 
+      border-radius: 6px;
+    }
+    .link-box a {
+      color: #1a73e8;
+      text-decoration: none;
+      font-size: 18px; 
+      font-weight: bold;
+    }
+    .footer {
+      margin-top: 25px;
+      font-size: 26px;
+      font-style: oblique;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <p class="heading">Jaa re Abhage(e),</p>
+    <p class="heading">Your reservation has been cancelled.</p>
+
+    <div class="details">
+      <p><strong>Date:</strong> {{ reservation_date }}</p>
+      <p><strong>Time:</strong> {{ reservation_time }}</p>
+      <p><strong>Guests:</strong> {{ no_of_guests }}</p>
+      <p><strong>Occasion:</strong> {{ occasion }}</p>
+      <p class="ref">Reference #: {{ reference_number }}</p>
+    </div>
+
+    <p class="footer">
+      Tohre bhaag me ee kul nahee likkha hai.
+    </p>
+    <p class="footer">Dhanno ki Banno.</p>
+  </div>
+</body>
+</html>
