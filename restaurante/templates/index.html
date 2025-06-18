@@ -10,7 +10,7 @@
     <meta name="description" content="A brief description" />
     <meta
       name="author"
-      content="Based in Chicago, Illinois, Little Lemon is a family owned Mediterranean restaurant, focused on traditional recipes served with a modern twist."
+      content="Based in Gorakhpur, UP, Dhanno Banno ki Rasoi is a chaat mahal, focused on traditional recipes served with a modern twist."
     />
 
     <!-- Load favicon -->
@@ -43,7 +43,7 @@
         <li><a href="#">Home</a></li>
         <li><a href="#">About</a></li>
         <li><a href="{% url 'restaurante:menu-list' %}">Menu</a></li>
-        <li><a href="{% url 'booking-list' %}">Book</a></li>
+        <li><a href="{% url 'restaurante:booking-list' %}">Book</a></li>
       </ul>
   </nav>
 <body>
@@ -53,7 +53,7 @@
       <p>
         30% Off This Weekend 
       </p>
-      <a href="{% url 'booking-list' %}" class="cta"> Book now </a>
+      <a href="{% url 'restaurante:booking-list' %}" class="cta"> Book now </a>
     </article>
   </section>
   <section>
