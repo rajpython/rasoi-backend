@@ -11,6 +11,10 @@ djoser = "*"
 django-cors-headers = "*"
 pillow = "*"
 django-filter = "*"
+dj-database-url = "*"
+python-dotenv = "*"
+gunicorn = "*"
+whitenoise = "*"
 
 [dev-packages]
 

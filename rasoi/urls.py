@@ -25,23 +25,6 @@ from rest_framework.authtoken.views import obtain_auth_token
 from django.conf import settings
 from django.conf.urls.static import static
 
-
-# router = DefaultRouter()
-
-# router.register(r'tables', views.BookingViewSet)
-# router.register(r'users', views.UserViewSet)
-
-
-
-# urlpatterns = [
-#     path("admin/", admin.site.urls),
-#     path("restaurante/", include('restaurante.urls')),
-#     path('restaurante/booking/', include(router.urls)),
-#     path('', include(router.urls))
-# ]
-
-# Router for BookingViewSet
-
 # Router for UserViewSet
 user_router = DefaultRouter()
 user_router.register(r'users', views.UserViewSet, basename='user')
@@ -58,3 +41,4 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
