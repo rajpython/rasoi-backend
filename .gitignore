@@ -1,5 +1,5 @@
 .env
 old_settings.py
-stripe_backup_code.pdf
-render_raso_db.txt
+/stripe_backup_code.pdf
+/render_raso_db.txt
 /staticfiles/
