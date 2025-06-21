@@ -1,0 +1,6 @@
+Hostname: dpg-d1a74q7gi27c73f70tbg-a
+user_name: rasoi_user
+password: 1WC630UYx4pHow9hm3cFTvCyxClum1s8
+Internal database url: postgresql://rasoi_user:1WC630UYx4pHow9hm3cFTvCyxClum1s8@dpg-d1a74q7gi27c73f70tbg-a/rasoi_db
+external database url:postgresql://rasoi_user:1WC630UYx4pHow9hm3cFTvCyxClum1s8@dpg-d1a74q7gi27c73f70tbg-a.oregon-postgres.render.com/rasoi_db
+psql command: PGPASSWORD=1WC630UYx4pHow9hm3cFTvCyxClum1s8 psql -h dpg-d1a74q7gi27c73f70tbg-a.oregon-postgres.render.com -U rasoi_user rasoi_db

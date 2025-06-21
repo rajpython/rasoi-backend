@@ -76,7 +76,8 @@ class BookingViewSet(viewsets.ModelViewSet):
             "reference_number": booking.reference_number,
             # "manage_link": f"http://localhost:3000/manage-reservation/{booking.reference_number}"
             "manage_link": f"{settings.FRONTEND_URL}/manage-reservation/{booking.reference_number}",
-            "photo_link" :f"{settings.BACKEND_URL}/restaurante/static/img/bannocopy.jpg"
+            # "photo_link" :f"{settings.BACKEND_URL}/restaurante/static/img/bannocopy.jpg"
+            "photo_link" :f"{settings.BACKEND_URL}/static/img/bannocopy.jpg"
         }
 
         html_message = render_to_string("book_confirm.html", context)
@@ -273,7 +274,8 @@ class OrderView(generics.ListCreateAPIView):
                     "order": order,
                     "order_items": order_items,
                     "address": address,  # Pass it in!
-                    "photo_link" :f"{settings.BACKEND_URL}/restaurante/static/img/banno2.png"
+                    # "photo_link" :f"{settings.BACKEND_URL}/restaurante/static/img/banno2.png"
+                    "photo_link" :f"{settings.BACKEND_URL}/static/img/banno2.png"
                 }
             
 
