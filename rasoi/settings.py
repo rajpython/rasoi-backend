@@ -216,3 +216,14 @@ DJOSER = {
 }
 
 
+# This is added because render is not serving images.
+
+WHITENOISE_ALLOW_ALL_ORIGINS = True
+
+if not DEBUG:
+    # Add media file handling via WhiteNoise in production
+    import mimetypes
+    mimetypes.add_type("image/png", ".png", True)
+    mimetypes.add_type("image/jpeg", ".jpg", True)
+    mimetypes.add_type("image/jpeg", ".jpeg", True)
+    mimetypes.add_type("image/webp", ".webp", True)
