@@ -30,6 +30,7 @@ SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
 
 # Debug
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+# DEBUG = False
 
 # Allowed Hosts
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
