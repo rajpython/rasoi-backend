@@ -21,10 +21,6 @@ import dj_database_url
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-
-
-
-
 # Secret Key
 SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
 
@@ -217,14 +213,14 @@ DJOSER = {
 }
 
 
-# This is added because render is not serving images.
+# # This is added because render is not serving images.
 
-WHITENOISE_ALLOW_ALL_ORIGINS = True
+# WHITENOISE_ALLOW_ALL_ORIGINS = True
 
-if not DEBUG:
-    # Add media file handling via WhiteNoise in production
-    import mimetypes
-    mimetypes.add_type("image/png", ".png", True)
-    mimetypes.add_type("image/jpeg", ".jpg", True)
-    mimetypes.add_type("image/jpeg", ".jpeg", True)
-    mimetypes.add_type("image/webp", ".webp", True)
+# if not DEBUG:
+#     # Add media file handling via WhiteNoise in production
+#     import mimetypes
+#     mimetypes.add_type("image/png", ".png", True)
+#     mimetypes.add_type("image/jpeg", ".jpg", True)
+#     mimetypes.add_type("image/jpeg", ".jpeg", True)
+#     mimetypes.add_type("image/webp", ".webp", True)
