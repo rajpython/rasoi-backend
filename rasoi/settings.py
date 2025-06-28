@@ -15,6 +15,8 @@ from pathlib import Path
 # from dotenv import load_dotenv
 import os
 import dj_database_url
+from dotenv import load_dotenv
+load_dotenv()
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -155,19 +157,33 @@ USE_TZ = True
 
 # STATIC_URL = "restaurante/static/"
 
-MEDIA_URL = '/media/'
+# Changes made on June 27 to serve media on aws
 
-# MEDIA_ROOT = BASE_DIR / 'media'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-# STATIC_URL = '/static/'
+
+
+AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
+AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
+AWS_STORAGE_BUCKET_NAME = 'rasoi-media'  # Replace with your actual bucket name
+AWS_S3_REGION_NAME = 'us-east-2'         # Or your specific AWS region
+
+AWS_QUERYSTRING_AUTH = False             # Optional: makes media URLs clean
+AWS_S3_FILE_OVERWRITE = False
+AWS_DEFAULT_ACL = None
+
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+MEDIA_URL = f'https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com/'
+
+
+
+# MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# MEDIA_URL = '/media/'
+
+
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# Where to look for static files during development
-# STATICFILES_DIRS = [
-#     os.path.join(BASE_DIR, 'restaurante/static'),
-# ]
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
