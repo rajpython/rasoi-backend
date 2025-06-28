@@ -5,3 +5,7 @@ render_raso_db.txt
 /staticfiles/
 /db_dumps/
 media.zip
+aws_access.txt
+
+delete_wrong_aws_folder.py
+upload_to_s3.py
