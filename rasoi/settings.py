@@ -58,6 +58,11 @@ EMAIL_HOST_USER = os.environ["EMAIL_HOST_USER"]
 
 EMAIL_HOST_PASSWORD = os.environ["EMAIL_HOST_PASSWORD"]
 
+
+# DEFAULT_FROM_EMAIL = 'Dhanno Banno Ki Rasoi <dhannobannokirasoi@gmail.com>'
+
+
+
 cors_origins = os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:3000")
 CORS_ALLOWED_ORIGINS = cors_origins.split(",")
 
@@ -102,7 +107,8 @@ ROOT_URLCONF = "rasoi.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": ['restaurant/templates'],
+        "DIRS": ['restaurante/templates'],
+        # "DIRS": [os.path.join(BASE_DIR, "restaurante/templates")],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -224,8 +230,22 @@ REST_FRAMEWORK = {
     },
 }
 
+FRONTEND_DOMAIN = os.getenv("FRONTEND_DOMAIN", "localhost:3000")
+FRONTEND_PROTOCOL = os.getenv("FRONTEND_PROTOCOL", "http")
+FRONTEND_SITE_NAME = os.getenv("FRONTEND_SITE_NAME", "Dhanno Banno Ki Rasoi")
+
+
+
 DJOSER = {
-    'USER_ID_FIELD': 'username'
+    'USER_ID_FIELD': 'username',
+    'PASSWORD_RESET_CONFIRM_URL': 'reset-password/{uid}/{token}',
+    'DOMAIN':FRONTEND_DOMAIN,
+    'PROTOCOL':FRONTEND_PROTOCOL,
+    'SITE_NAME':FRONTEND_SITE_NAME,
+    "EMAIL": {
+        "password_reset": "restaurante.emails.CustomPasswordResetEmail",
+    },
+
 }
 
 
