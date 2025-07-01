@@ -1,14 +1,42 @@
 
+# from django.conf import settings
+# from djoser.email import PasswordResetEmail
+
+# class CustomPasswordResetEmail(PasswordResetEmail):
+#     def get_context_data(self):
+#         context = super().get_context_data()
+#         context["domain"] = settings.DJOSER.get("DOMAIN", "localhost:3000")
+#         context["protocol"] = settings.DJOSER.get("PROTOCOL", "http")
+#         context["site_name"] = settings.DJOSER.get("SITE_NAME", context["domain"])
+#         return context
+
+
 from django.conf import settings
 from djoser.email import PasswordResetEmail
 
 class CustomPasswordResetEmail(PasswordResetEmail):
     def get_context_data(self):
         context = super().get_context_data()
-        context["domain"] = settings.DJOSER.get("DOMAIN", "localhost:3000")
-        context["protocol"] = settings.DJOSER.get("PROTOCOL", "http")
-        context["site_name"] = settings.DJOSER.get("SITE_NAME", context["domain"])
+        # Safely pull from DJOSER dict or fallback
+        djoser_config = getattr(settings, "DJOSER", {})
+        context["domain"] = djoser_config.get("DOMAIN") or "localhost:3000"
+        context["protocol"] = djoser_config.get("PROTOCOL") or "http"
+        context["site_name"] = djoser_config.get("SITE_NAME") or context["domain"]
+
+        print("=== PASSWORD RESET EMAIL CONTEXT ===")
+        print("domain:", context["domain"])
+        print("protocol:", context["protocol"])
+        print("site_name:", context["site_name"])
+        print("===================================")
+
         return context
+
+
+
+
+
+
+
 
 
 #IF IN CASE ONE WANTS TO REVISIT THE TEMPLATES
