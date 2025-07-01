@@ -234,6 +234,11 @@ FRONTEND_DOMAIN = os.getenv("FRONTEND_DOMAIN", "localhost:3000")
 FRONTEND_PROTOCOL = os.getenv("FRONTEND_PROTOCOL", "http")
 FRONTEND_SITE_NAME = os.getenv("FRONTEND_SITE_NAME", "Dhanno Banno Ki Rasoi")
 
+try:
+    from restaurante.emails import CustomPasswordResetEmail
+    print("CustomPasswordResetEmail imported successfully:", CustomPasswordResetEmail)
+except Exception as e:
+    print("Error importing CustomPasswordResetEmail:", e)
 
 
 DJOSER = {
