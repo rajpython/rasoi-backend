@@ -23,11 +23,11 @@ class CustomPasswordResetEmail(PasswordResetEmail):
         context["protocol"] = djoser_config.get("PROTOCOL") or "http"
         context["site_name"] = djoser_config.get("SITE_NAME") or context["domain"]
 
-        print("=== PASSWORD RESET EMAIL CONTEXT ===")
-        print("domain:", context["domain"])
-        print("protocol:", context["protocol"])
-        print("site_name:", context["site_name"])
-        print("===================================")
+        # print("=== PASSWORD RESET EMAIL CONTEXT ===")
+        # print("domain:", context["domain"])
+        # print("protocol:", context["protocol"])
+        # print("site_name:", context["site_name"])
+        # print("===================================")
 
         return context
 
