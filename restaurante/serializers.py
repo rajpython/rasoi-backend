@@ -243,3 +243,4 @@ class CustomerReviewSerializer(serializers.ModelSerializer):
         validated_data['user'] = request.user
         return super().create(validated_data)
 
+

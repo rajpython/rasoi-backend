@@ -36,6 +36,7 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.authtoken')),
+    path('auth/', include('djoser.urls.jwt')),     # <-- JWT endpoints: /j
     path('api-token-auth/', obtain_auth_token),
 ]
 

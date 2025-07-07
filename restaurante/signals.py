@@ -7,3 +7,13 @@ from .models import UserProfile
 # def create_user_profile(sender, instance, created, **kwargs):
 #     if created:
 #         UserProfile.objects.create(user=instance)
+
+# # in restaurante/signals.py
+# from django.conf import settings
+# # from django.dispatch import receiver
+# from djoser.signals import password_reset
+# from djoser import utils
+
+# @receiver(password_reset)
+# def password_reset_email_handler(sender, user, context, **kwargs):
+#     context['frontend_url'] = settings.FRONTEND_URL

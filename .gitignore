@@ -1,6 +1,7 @@
 .env
 old_settings.py
 stripe_backup_code.pdf
+stripe_backup.txt
 render_raso_db.txt
 /staticfiles/
 /db_dumps/

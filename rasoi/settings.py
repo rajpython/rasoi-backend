@@ -59,7 +59,7 @@ EMAIL_HOST_USER = os.environ["EMAIL_HOST_USER"]
 EMAIL_HOST_PASSWORD = os.environ["EMAIL_HOST_PASSWORD"]
 
 
-# DEFAULT_FROM_EMAIL = 'Dhanno Banno Ki Rasoi <dhannobannokirasoi@gmail.com>'
+DEFAULT_FROM_EMAIL = 'Dhanno Banno Ki Rasoi <dhannobannokirasoi@gmail.com>'
 
 
 
@@ -86,6 +86,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "djoser",
     "rest_framework.authtoken",
+    "rest_framework_simplejwt.token_blacklist",
 
 ]
 
@@ -218,6 +219,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_AUTHENTICATION_CLASSES':[
         'rest_framework.authentication.TokenAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
         "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
@@ -234,11 +236,6 @@ FRONTEND_DOMAIN = os.getenv("FRONTEND_DOMAIN", "localhost:3000")
 FRONTEND_PROTOCOL = os.getenv("FRONTEND_PROTOCOL", "http")
 FRONTEND_SITE_NAME = os.getenv("FRONTEND_SITE_NAME", "Dhanno Banno Ki Rasoi")
 
-try:
-    from restaurante.emails import CustomPasswordResetEmail
-    print("CustomPasswordResetEmail imported successfully:", CustomPasswordResetEmail)
-except Exception as e:
-    print("Error importing CustomPasswordResetEmail:", e)
 
 
 DJOSER = {
@@ -253,6 +250,8 @@ DJOSER = {
 
 }
 
+# DEFAULT_FROM_EMAIL = 'DhannoBannoKiRasoi@gmail.com'
+
 
 # # This is added because render is not serving images.
 
@@ -265,3 +264,13 @@ DJOSER = {
 #     mimetypes.add_type("image/jpeg", ".jpg", True)
 #     mimetypes.add_type("image/jpeg", ".jpeg", True)
 #     mimetypes.add_type("image/webp", ".webp", True)
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
