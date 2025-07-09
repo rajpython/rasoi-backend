@@ -9,10 +9,24 @@ from datetime import date
 
 
 class BookingSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
 
     class Meta:
         model = Booking
         fields = '__all__'
+
+    def get_user(self, obj):
+        if obj.user:
+            return {
+                "id": obj.user.id,
+                "username": obj.user.username,
+                "email": obj.user.email
+            }
+        return None
+
+    # class Meta:
+    #     model = Booking
+    #     fields = '__all__'
     
     def validate(self, data):
         reservation_date = data.get('reservation_date', getattr(self.instance, 'reservation_date', None))
@@ -106,11 +120,17 @@ class CartSerializer(serializers.ModelSerializer):
         return instance
 
 
+
+class MenuItemShortSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MenuItem
+        fields = ['title']  # or just ['title']
+
 class OrderItemSerializer(serializers.ModelSerializer):
+    menuitem= MenuItemShortSerializer(read_only=True)
     class Meta:
         model = OrderItem
         fields = ['order', 'menuitem', 'quantity', 'price']
-
 
 class OrderSerializer(serializers.ModelSerializer):
     orderitem = OrderItemSerializer(many=True, read_only=True, source='order')

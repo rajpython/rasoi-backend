@@ -7,6 +7,8 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework import generics, viewsets, filters, status
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny, IsAuthenticatedOrReadOnly
+from rest_framework.exceptions import PermissionDenied
+
 
 from .models import Category, MenuItem, Cart, Order, OrderItem, Booking, TIME_SLOTS, DELIVERY_TIME_SLOTS
 from .serializers import BookingSerializer, CategorySerializer, MenuItemSerializer, \
@@ -25,9 +27,6 @@ from .serializers import CustomerReviewSerializer
 
 
 
-
-
-
 # Create your views here.
 
 def index(request):
@@ -35,12 +34,35 @@ def index(request):
 
 
 
-
 class BookingViewSet(viewsets.ModelViewSet):
-    queryset = Booking.objects.all()
+    # queryset = Booking.objects.all()
     serializer_class = BookingSerializer
-    permission_classes = [AllowAny]
+    # permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_authenticated:
+            # For normal users, show only their reservations
+            if user.is_staff or user.is_superuser or user.groups.filter(name="manager").exists():
+                return Booking.objects.all().order_by('-reservation_date', '-reservation_time')
+            return Booking.objects.filter(user=user).order_by('-reservation_date', '-reservation_time')
+        # For non-logged-in users, return nothing (or could allow showing NONE)
+        return Booking.objects.none()
+
+
+    def get_object(self):
+        obj = super().get_object()
+        user = self.request.user
+        if self.request.method in ['PATCH', 'PUT', 'DELETE']:
+            if user.is_authenticated:
+                if obj.user == user or user.is_staff or user.is_superuser or user.groups.filter(name="manager").exists():
+                    return obj
+                else:
+                    raise PermissionDenied("You do not have permission to modify this booking.")
+            else:
+                raise PermissionDenied("Authentication required to modify bookings.")
+        return obj
     # ------------------------
     # Public: Available Times
     # ------------------------
@@ -61,7 +83,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         return Response({"times": available})
 
     # ------------------------
-    # DRY: Send Confirmation Email
+    # Send Emails
     # ------------------------
     def send_confirmation_email(self, booking):
         subject = "Your Table Reservation at Dhanno Banno Ki Rasoi"
@@ -74,10 +96,8 @@ class BookingViewSet(viewsets.ModelViewSet):
             "no_of_guests": booking.no_of_guests,
             "occasion": booking.occasion,
             "reference_number": booking.reference_number,
-            # "manage_link": f"http://localhost:3000/manage-reservation/{booking.reference_number}"
             "manage_link": f"{settings.FRONTEND_URL}/manage-reservation/{booking.reference_number}",
-            # "photo_link" :f"{settings.BACKEND_URL}/restaurante/static/img/bannocopy.jpg"
-            "photo_link" :f"{settings.BACKEND_URL}/static/img/bannocopy.jpg"
+            "photo_link": f"{settings.BACKEND_URL}/static/img/bannocopy.jpg"
         }
 
         html_message = render_to_string("book_confirm.html", context)
@@ -108,15 +128,17 @@ class BookingViewSet(viewsets.ModelViewSet):
         email_message.attach_alternative(html_message, "text/html")
         email_message.send(fail_silently=False)
 
-
     # ------------------------
-    # On Create: Save + Send Email
+    # On Create: attach user if logged in
     # ------------------------
     def perform_create(self, serializer):
         email = self.request.data.get('email') or (
             self.request.user.email if self.request.user.is_authenticated else None
         )
-        booking = serializer.save(email=email)
+        booking = serializer.save(
+            user=self.request.user if self.request.user.is_authenticated else None,
+            email=email
+        )
         self.send_confirmation_email(booking)
 
     # ------------------------
@@ -211,13 +233,13 @@ class OrderView(generics.ListCreateAPIView):
     def get_queryset(self):
         user = self.request.user
         if user.is_superuser:
-            return Order.objects.all()
+            return Order.objects.all().order_by('-date')
         elif user.groups.count() == 0:  # normal customer - no group
-            return Order.objects.filter(user=user)
+            return Order.objects.filter(user=user).order_by('-date')
         elif user.groups.filter(name='Delivery Crew').exists():
-            return Order.objects.filter(delivery_crew=user)
+            return Order.objects.filter(delivery_crew=user).order_by('-date')
         else:  # manager or delivery-crew
-            return Order.objects.all()
+            return Order.objects.all().order_by('-date')
 
     def create(self, request, *args, **kwargs):
         user = request.user
@@ -393,8 +415,6 @@ class DeliveryCrewViewSet(viewsets.ViewSet):
     
 
 
-
-
 class CustomerReviewViewSet(viewsets.ModelViewSet):
     queryset = CustomerReview.objects.select_related('user').order_by('-created_at')
     serializer_class = CustomerReviewSerializer
@@ -402,3 +422,13 @@ class CustomerReviewViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    @action(detail=False, methods=['get'], url_path='my')
+    def my_reviews(self, request):
+        user_reviews = CustomerReview.objects.filter(user=request.user).order_by('-created_at')
+        page = self.paginate_queryset(user_reviews)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(user_reviews, many=True)
+        return Response(serializer.data)

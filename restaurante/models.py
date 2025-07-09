@@ -19,6 +19,12 @@ DELIVERY_TIME_SLOTS = [("ASAP", "ASAP")] + TIME_SLOTS
 
 
 class Booking(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,    # if user deleted, booking stays
+        null=True, blank=True,        # allow legacy data & anonymous bookings
+        related_name='bookings'
+    )
     reservation_date = models.DateField()
     reservation_time = models.CharField(max_length=5, choices=TIME_SLOTS,default="11:00")  # e.g., "17:30"
     no_of_guests = models.PositiveSmallIntegerField(default=1)
