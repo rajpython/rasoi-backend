@@ -17,6 +17,7 @@ gunicorn = "*"
 whitenoise = "*"
 boto3 = "*"
 django-storages = "*"
+stripe = "*"
 
 [dev-packages]
 

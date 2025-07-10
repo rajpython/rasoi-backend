@@ -110,6 +110,19 @@ class Order(models.Model):
     delivery_pin = models.CharField(max_length=12, blank=True, null=True)
     delivery_time_slot = models.CharField(max_length=20,choices=DELIVERY_TIME_SLOTS,default="ASAP")
 
+    payment_method = models.CharField(
+    max_length=20,
+    choices=[('stripe', 'Stripe'), ('cod', 'Cash on Delivery')],
+    default='cod'
+    )
+    payment_status = models.CharField(
+        max_length=20,
+        choices=[('pending', 'Pending'), ('paid', 'Paid')],
+        default='pending'
+    )
+    stripe_payment_intent_id = models.CharField(max_length=255, blank=True, null=True)
+
+
 
 
     def __str__(self):

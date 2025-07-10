@@ -149,7 +149,9 @@ class OrderSerializer(serializers.ModelSerializer):
             'delivery_address',
             'delivery_city',
             'delivery_pin',
-            'delivery_time_slot'
+            'delivery_time_slot',
+            'payment_method', 
+            'payment_status', 
         ]
 
 

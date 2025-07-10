@@ -274,3 +274,7 @@ SIMPLE_JWT = {
     "BLACKLIST_AFTER_ROTATION": True,
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
+
+
+
+STRIPE_SECRET_KEY=os.getenv("STRIPE_SECRET_KEY")

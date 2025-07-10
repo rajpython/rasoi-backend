@@ -6,7 +6,7 @@ from .views import index, CategoriesView, CartView, OrderView, SingleOrderView, 
 UserRegistrationView, UserProfileView, MenuItemViewSet, AdminUserViewSet, BookingViewSet, CartItemDetailView
 from restaurante.views import available_time_slots
 from .views import CustomerReviewViewSet
-
+from .stripe_payment import CreatePaymentIntent
 
 
 app_name = 'restaurante'
@@ -25,6 +25,7 @@ urlpatterns = [
     # path('', include(router.urls)),  # ✅ Include the registered menu-items route
     path('register/', UserRegistrationView.as_view(), name='register'),
     path('me/', UserProfileView.as_view(), name='user-profile'),
+    path('api/create-payment-intent/', CreatePaymentIntent.as_view(), name='create-payment-intent'),
 ]
 
 
