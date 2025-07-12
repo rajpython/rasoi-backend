@@ -10,3 +10,6 @@ aws_access.txt
 
 delete_wrong_aws_folder.py
 upload_to_s3.py
+streamtest_*
+chaatgpt_view_*
+chatbot_related/

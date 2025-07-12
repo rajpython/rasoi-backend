@@ -18,6 +18,7 @@ whitenoise = "*"
 boto3 = "*"
 django-storages = "*"
 stripe = "*"
+openai = "*"
 
 [dev-packages]
 

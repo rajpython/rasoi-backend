@@ -8,6 +8,10 @@ from restaurante.views import available_time_slots
 from .views import CustomerReviewViewSet
 from .stripe_payment import CreatePaymentIntent
 
+from restaurante.chaatgpt_views import chaatgpt_view
+
+
+
 
 app_name = 'restaurante'
 
@@ -26,6 +30,7 @@ urlpatterns = [
     path('register/', UserRegistrationView.as_view(), name='register'),
     path('me/', UserProfileView.as_view(), name='user-profile'),
     path('api/create-payment-intent/', CreatePaymentIntent.as_view(), name='create-payment-intent'),
+    path('api/chaatbaat/', chaatgpt_view, name='chaatgpt'),
 ]
 
 
