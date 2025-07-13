@@ -69,6 +69,9 @@ CORS_ALLOWED_ORIGINS = cors_origins.split(",")
 # Only use this for development!
 CORS_ALLOW_ALL_ORIGINS = os.environ.get("CORS_ALLOW_ALL_ORIGINS", "False") == "True"
 
+CORS_ALLOW_CREDENTIALS = True
+
+
 
 
 # Application definition

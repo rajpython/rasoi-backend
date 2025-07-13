@@ -199,7 +199,12 @@ def save_to_db_conversation(user, session_id, role, message):
 def chaatgpt_view(request):
     user = request.user
     message = request.data.get("message", "").strip()
-    session_id = request.COOKIES.get('chat_session_id') or request.data.get('session_id')
+    
+    # session_id = request.COOKIES.get('chat_session_id') or request.data.get('session_id')
+    if not request.session.session_key:
+        request.session.create()
+        session_id = request.session.session_key
+
 
     static_context = get_static_menu_context()
     user_context = get_user_context(user)
