@@ -19,6 +19,7 @@ boto3 = "*"
 django-storages = "*"
 stripe = "*"
 openai = "*"
+django-redis = "*"
 
 [dev-packages]
 
