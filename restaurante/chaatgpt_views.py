@@ -7,10 +7,12 @@ from rest_framework.permissions import AllowAny
 from django.core.cache import cache
 from django.conf import settings
 from openai import OpenAI
-from restaurante.models import Booking, Order, OrderItem, CustomerReview, UserProfile, Category, MenuItem
+from restaurante.models import Booking, Order, OrderItem, CustomerReview, UserProfile, Category, \
+    MenuItem, ChatHistory
 from restaurante.models import TIME_SLOTS, DELIVERY_TIME_SLOTS
 from datetime import datetime
 from datetime import date
+
 
 client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
@@ -180,6 +182,17 @@ def save_chat_turn(user, session_id, role, message):
     cache.set(key, history, timeout=600)  # 10 min cache
 
 # -------------------------------
+# Save to database
+def save_to_db_conversation(user, session_id, role, message):
+    ChatHistory.objects.create(
+        user=user if user.is_authenticated else None,
+        session_id=session_id,
+        role=role,
+        message=message
+    )
+
+
+# -------------------------------
 # Main view with Redis memory
 @api_view(["POST"])
 @permission_classes([AllowAny])
@@ -240,5 +253,9 @@ def chaatgpt_view(request):
         finally:
             save_chat_turn(user, session_id, "user", message)
             save_chat_turn(user, session_id, "assistant", assistant_reply)
+
+            # Save to DB for permanent audit / analytics
+            save_to_db_conversation(user, session_id, "user", message)
+            save_to_db_conversation(user, session_id, "assistant", assistant_reply)
 
     return StreamingHttpResponse(stream_generator(), content_type='text/plain')
