@@ -9,9 +9,11 @@ from restaurante.agent_tools import AGENTIC_TOOLS, TOOL_FUNCTION_MAP
 from restaurante.utils import get_user_context, get_chat_history, save_chat_turn, save_to_db_conversation
 import json
 import inspect
+from django.views.decorators.csrf import csrf_exempt
 
 client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
+@csrf_exempt
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def chaatgpt_view(request):
