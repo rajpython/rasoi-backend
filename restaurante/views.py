@@ -8,6 +8,9 @@ from rest_framework import generics, viewsets, filters, status
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework.exceptions import PermissionDenied
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+
 
 
 from .models import Category, MenuItem, Cart, Order, OrderItem, Booking, TIME_SLOTS, DELIVERY_TIME_SLOTS
@@ -33,12 +36,16 @@ def index(request):
     return render(request, 'index.html', {})
 
 
-
+# @method_decorator(csrf_exempt, name='dispatch')
 class BookingViewSet(viewsets.ModelViewSet):
     # queryset = Booking.objects.all()
     serializer_class = BookingSerializer
     # permission_classes = [AllowAny]
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [AllowAny()]
+        return [IsAuthenticatedOrReadOnly()]
 
     def get_queryset(self):
         user = self.request.user
