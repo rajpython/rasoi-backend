@@ -111,23 +111,23 @@ def get_address_label(user):
         age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
 
     if gender == "M":
-        return "bhaiya" if age is None or age < 40 else "chacha"
+        return "Bhaiya" if age is None or age < 40 else "Chacha"
     elif gender == "F":
         if age is None:
-            return "didi"
-        if age < 30:
-            return "bahini"
+            return "Didi"
+        if age < 40:
+            return "Bahini"
         elif age < 50:
             return "didi"
         else:
-            return "mataji"
-    return "mitra"
+            return "Mataji"
+    return "Mitra"
 
 # -------------------------------
 # User profile context
 def get_user_context(user):
     if not user.is_authenticated:
-        return "No user is logged in, so bas aam taur pe madad karo."
+        return "No user is logged in, so help in general terms and manner."
 
     address_as = get_address_label(user)
 
@@ -167,20 +167,24 @@ def get_user_context(user):
     review_str = "\n".join([f"{r.feedback[:60]}... (⭐ {r.rating})" for r in reviews]) or "No recent reviews."
 
     return f"""
-👋 Namaste {address_as}!
+Ka ho {user.username} {address_as.upper()}, sab theek ba?
 
-Profile info:
-{profile_str}
+USER INFO:
+- Username: {user.username}
+- Addressed as: {address_as}
+- Email: {user.email}
+- Profile Details: {profile_str}
 
-Recent bookings:
+RECENT BOOKINGS:
 {booking_str}
 
-Recent orders:
+RECENT ORDERS:
 {order_str}
 
-Recent reviews:
+RECENT REVIEWS:
 {review_str}
 """
+
 
 def friendly_date_string(date_obj):
     """
