@@ -63,6 +63,7 @@ DEFAULT_FROM_EMAIL = 'Dhanno Banno Ki Rasoi <dhannobannokirasoi@gmail.com>'
 
 
 
+
 cors_origins = os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:3000")
 CORS_ALLOWED_ORIGINS = cors_origins.split(",")
 
@@ -70,6 +71,11 @@ CORS_ALLOWED_ORIGINS = cors_origins.split(",")
 CORS_ALLOW_ALL_ORIGINS = os.environ.get("CORS_ALLOW_ALL_ORIGINS", "False") == "True"
 
 CORS_ALLOW_CREDENTIALS = True
+# ADDED TWO LINES BELOW TO ALLOW GUEST SESSIONS
+from corsheaders.defaults import default_headers
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "X-Guest-Id",
+]
 
 
 

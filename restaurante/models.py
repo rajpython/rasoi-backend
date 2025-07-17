@@ -211,15 +211,40 @@ class CustomerReview(models.Model):
         return f"{self.user.username}: {self.feedback[:30]}..."
 
 ### ADDED TO INCLUDE CHAT HISTORY 
+# class ChatHistory(models.Model):
+#     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+#     session_id = models.CharField(max_length=100, null=True, blank=True)
+#     role = models.CharField(max_length=20, choices=[('user', 'User'), ('assistant', 'Assistant')])
+#     message = models.TextField()
+#     timestamp = models.DateTimeField(auto_now_add=True)
+
+#     def __str__(self):
+#         user_str = self.user.username if self.user else f"Session {self.session_id}"
+#         return f"{self.role} - {user_str} - {self.timestamp}"
+    
+
+from django.contrib.postgres.fields import JSONField  # for PostgreSQL, or use models.JSONField in Django 3.1+
+
 class ChatHistory(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     session_id = models.CharField(max_length=100, null=True, blank=True)
-    role = models.CharField(max_length=20, choices=[('user', 'User'), ('assistant', 'Assistant')])
-    message = models.TextField()
+    role = models.CharField(
+        max_length=20, 
+        choices=[
+            ('user', 'User'), 
+            ('assistant', 'Assistant'),
+            ('function', 'Function')
+        ]
+    )
+    message = models.TextField(blank=True, null=True)
+    function_name = models.CharField(max_length=100, blank=True, null=True)
+    function_arguments = models.JSONField(blank=True, null=True)
+    function_result = models.JSONField(blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         user_str = self.user.username if self.user else f"Session {self.session_id}"
         return f"{self.role} - {user_str} - {self.timestamp}"
+
 
 
