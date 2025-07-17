@@ -118,7 +118,7 @@ from djoser.email import PasswordResetEmail
 import datetime
 
 class CustomPasswordResetEmail(PasswordResetEmail):
-    template_name = "email/password_reset.html"
+    template_name = "email/password_reset_chat.html"
     subject_template_name = "email/password_reset_subject.txt"  # Optional, recommended
 
     def get_context_data(self):
@@ -130,6 +130,7 @@ class CustomPasswordResetEmail(PasswordResetEmail):
         context["frontend_url"] = f"{context['protocol']}://{context['domain']}"
         context["now"] = datetime.datetime.now()
         context["photo_link"] = f"{settings.BACKEND_URL}/static/img/bannocopy.jpg"
+        context["photo_chat"] = f"{settings.BACKEND_URL}/static/img/chaatGPT-logo.png"
 
         # Make sure 'user' is a string, not a User object
         user_val = context.get("user")
