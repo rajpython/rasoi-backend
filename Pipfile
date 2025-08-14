@@ -21,6 +21,9 @@ stripe = "*"
 openai = "*"
 django-redis = "*"
 dateparser = "*"
+pydantic = "*"
+python-dateutil = "*"
+email-validator = "*"
 
 [dev-packages]
 

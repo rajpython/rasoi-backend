@@ -120,7 +120,9 @@ class Order(models.Model):
         choices=[('pending', 'Pending'), ('paid', 'Paid')],
         default='pending'
     )
+    is_confirmed = models.BooleanField(default=False)
     stripe_payment_intent_id = models.CharField(max_length=255, blank=True, null=True)
+
 
 
 

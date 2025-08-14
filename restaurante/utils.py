@@ -1,4 +1,4 @@
-from datetime import date
+
 from django.core.cache import cache
 from restaurante.models import (
     ChatHistory,
@@ -8,26 +8,52 @@ from restaurante.models import (
     CustomerReview,
     UserProfile
 )
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
+from dateutil import parser
+
+  
+def resolve_date_keyword(date_str):
+    date_str = date_str.strip().lower()
+    today = datetime.today().date()
+
+    if date_str == "today":
+        return str(today)
+    elif date_str == "tomorrow":
+        return str(today + timedelta(days=1))
+    else:
+        # First try strict YYYY-MM-DD
+        try:
+            parsed = datetime.strptime(date_str, "%Y-%m-%d").date()
+            return str(parsed)
+        except ValueError:
+            pass
+
+        # 👇 NEW: parse natural formats like "12 August 2026" or "1 Aug"
+
+        try:
+            return str(parser.parse(date_str, dayfirst=True).date())
+        except (ValueError, OverflowError):
+            # If still unrecognized, return as-is
+            print(f"⚠️ Unrecognized date string: {date_str}")
+            return date_str
+
+
 
 def format_slot(slot):
     # converts "13:30" -> "1:30 PM"
     return datetime.strptime(slot, "%H:%M").strftime("%-I:%M %p")
-# -------------------------------
-# Chat history helpers
-# def get_chat_history(user, session_id, limit=8):
-#     key = f"chat_history_user_{user.id}" if user and user.is_authenticated else f"chat_history_guest_{session_id}"
-#     history = cache.get(key, [])
-#     return history[-limit:]
 
-# def save_chat_turn(user, session_id, role=None, message=None, full_message=None):
-#     key = f"chat_history_user_{user.id}" if user and user.is_authenticated else f"chat_history_guest_{session_id}"
-#     history = cache.get(key, [])
-#     if full_message:
-#         history.append(full_message)
-#     else:
-#         history.append({"role": role, "content": message})
-#     cache.set(key, history, timeout=600)
+
+ORDER_CONTEXT_TIMEOUT = 600  # 10 minutes
+
+def set_order_context(session_id, context):
+    key = f"order_context_{session_id}"
+    cache.set(key, context, timeout=ORDER_CONTEXT_TIMEOUT)
+
+def clear_order_context(session_id):
+    key = f"order_context_{session_id}"
+    cache.delete(key)
+    
 
 def get_chat_history(user, session_id, limit=8):
     """
@@ -37,29 +63,14 @@ def get_chat_history(user, session_id, limit=8):
     """
     key = f"chat_history_user_{user.id}" if user and user.is_authenticated else f"chat_history_guest_{session_id}"
     history = cache.get(key, [])
-    return history[-limit:]
+    # return history[-limit:]
+    return [
+    {**msg, "content": msg.get("content") or "🤖 Sorry, kuch samajh nahi aaya!"}
+    if msg["role"] == "assistant" else msg
+    for msg in history[-limit:]
+]
 
 
-# def save_chat_turn(user, session_id, role=None, message=None, name=None, full_message=None):
-#     """
-#     Saves a chat turn to cache. 
-#     - If `full_message` is provided, stores it directly (must be a dict with keys like role, content, etc).
-#     - Otherwise builds message from role + content (+ name if role is 'function').
-#     """
-#     key = f"chat_history_user_{user.id}" if user and user.is_authenticated else f"chat_history_guest_{session_id}"
-#     history = cache.get(key, [])
-
-#     if full_message:
-#         history.append(full_message)
-#     else:
-#         data = {"role": role, "content": message}
-#         if role == "function":
-#             if not name:
-#                 raise ValueError("Function role requires a name field.")
-#             data["name"] = name
-#         history.append(data)
-
-#     cache.set(key, history, timeout=600)
 
 def save_chat_turn(user, session_id, role=None, message=None, full_message=None, name=None):
     key = f"chat_history_user_{user.id}" if user and user.is_authenticated else f"chat_history_guest_{session_id}"
@@ -103,7 +114,7 @@ def get_address_label(user):
         dob = profile.dob
         gender = profile.gender
     except (AttributeError, UserProfile.DoesNotExist):
-        return "mitra"
+        return "Janaab"
 
     age = None
     if dob:
@@ -111,16 +122,16 @@ def get_address_label(user):
         age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
 
     if gender == "M":
-        return "Bhaiya" if age is None or age < 40 else "Chacha"
+        return "Bhai-Jaan" if age is None or age < 40 else "Chacha-Jaan"
     elif gender == "F":
         if age is None:
-            return "Didi"
+            return "Mohtarma"
         if age < 40:
-            return "Bahini"
+            return "Jiji-Jaan"
         elif age < 50:
-            return "didi"
+            return "Aapi-Jaan"
         else:
-            return "Mataji"
+            return "Khala-Jaan"
     return "Mitra"
 
 # -------------------------------

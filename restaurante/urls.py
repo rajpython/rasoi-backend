@@ -3,13 +3,16 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import index, CategoriesView, CartView, OrderView, SingleOrderView, GroupViewSet, DeliveryCrewViewSet, \
-UserRegistrationView, UserProfileView, MenuItemViewSet, AdminUserViewSet, BookingViewSet, CartItemDetailView
+UserRegistrationView, UserProfileView, MenuItemViewSet, AdminUserViewSet, BookingViewSet, CartItemDetailView, delete_unconfirmed_order
 from restaurante.views import available_time_slots
 from .views import CustomerReviewViewSet
+from .views import botorder_email
 from .stripe_payment import CreatePaymentIntent
 
-from restaurante.chaatgpt_views import chaatgpt_view
-from restaurante.chaatgpt_reset import reset_chat_context
+# from restaurante.chaatgpt_views_booking import chaatgpt_view
+# from restaurante.chaatgpt_views_orders import chaatgpt_view
+from .chatviews.chatbot_views import chaatgpt_view
+from .chatviews.chaatgpt_reset import reset_chat_context
 
 
 
@@ -33,6 +36,8 @@ urlpatterns = [
     path('api/create-payment-intent/', CreatePaymentIntent.as_view(), name='create-payment-intent'),
     path('api/chaatbaat/', chaatgpt_view, name='chaatgpt'),
     path('api/chaatreset/', reset_chat_context, name='reset-chat-context'),
+    path("orders/<int:order_id>/confirm/", botorder_email),
+    path('orders/<int:order_id>/delete/', delete_unconfirmed_order, name='delete_unconfirmed_order'),
 ]
 
 

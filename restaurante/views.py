@@ -43,6 +43,8 @@ class BookingViewSet(viewsets.ModelViewSet):
     # permission_classes = [AllowAny]
     
     def get_permissions(self):
+        if getattr(self, "action", None) == "manage_by_reference":
+            return [AllowAny()]
         if self.request.method == "POST":
             return [AllowAny()]
         return [IsAuthenticatedOrReadOnly()]
@@ -233,20 +235,23 @@ class CartItemDetailView(generics.RetrieveUpdateDestroyAPIView):
     
 
 class OrderView(generics.ListCreateAPIView):
+
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated]
-
+        
     def get_queryset(self):
         user = self.request.user
+        qs = Order.objects.filter(is_confirmed=True)  # ✅ Default: confirmed only
+
         if user.is_superuser:
-            return Order.objects.all().order_by('-date')
-        elif user.groups.count() == 0:  # normal customer - no group
-            return Order.objects.filter(user=user).order_by('-date')
+            return Order.objects.all().order_by('-date')  # superuser sees all
+        elif user.groups.count() == 0:
+            return qs.filter(user=user).order_by('-date')  # customer sees only their confirmed orders
         elif user.groups.filter(name='Delivery Crew').exists():
-            return Order.objects.filter(delivery_crew=user).order_by('-date')
-        else:  # manager or delivery-crew
-            return Order.objects.all().order_by('-date')
+            return qs.filter(delivery_crew=user).order_by('-date')  # delivery crew sees confirmed assigned orders
+        else:
+            return qs.order_by('-date')  # e.g., manager sees all confirmed orders
 
     def create(self, request, *args, **kwargs):
         user = request.user
@@ -332,16 +337,40 @@ def available_time_slots(request):
     slots = [slot for slot, _ in DELIVERY_TIME_SLOTS]
     return Response({"time_slots": slots})
 
+
 class SingleOrderView(generics.RetrieveUpdateAPIView):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated]
 
     def update(self, request, *args, **kwargs):
-        if self.request.user.groups.count()==0: # Normal user, not belonging to any group = Customer
-            return Response('Not Ok')
-        else: #everyone else - Super Admin, Manager and Delivery Crew
-            return super().update(request, *args, **kwargs)
+        order = self.get_object()
+
+        # Prevent others from modifying another user's order
+        if order.user != request.user:
+            return Response({"error": "Unauthorized"}, status=403)
+
+        # If normal customer (no group)
+        if request.user.groups.count() == 0:
+            # Allow PATCH for address fields only
+            address_fields = ['delivery_address', 'delivery_city', 'delivery_pin']
+            updated = False
+
+            for field in address_fields:
+                if field in request.data:
+                    setattr(order, field, request.data[field])
+                    updated = True
+
+            if updated:
+                order.save()
+                print("📤 API /orders/<id> GET response:", OrderSerializer(order).data)
+                return Response(OrderSerializer(order).data)
+            else:
+                return Response({"error": "Only address fields can be updated."}, status=400)
+
+        # Else for admin/crew/manager, allow full update
+        return super().update(request, *args, **kwargs)
+
 
 
 
@@ -439,3 +468,96 @@ class CustomerReviewViewSet(viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(user_reviews, many=True)
         return Response(serializer.data)
+
+
+
+
+# ################
+# BOT ORDER EMAIL VIEW
+############
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def botorder_email(request, order_id):
+    try:
+        order = Order.objects.get(id=order_id, user=request.user)
+
+        order.is_confirmed = True  # ✅ Mark as confirmed
+        order.save()
+
+        order_items = OrderItem.objects.filter(order=order)
+
+        user_profile = getattr(request.user, 'profile', None)
+        gender = getattr(user_profile, 'gender', '').lower() if user_profile else ''
+        address = "Chatoree" if gender == "f" else "Chatore"
+
+        context = {
+            "user": request.user,
+            "order": order,
+            "order_items": order_items,
+            "address": address,
+            "photo_link": f"{settings.BACKEND_URL}/static/img/banno2.png"
+        }
+
+        html_content = render_to_string('order_confirmation_email.html', context)
+        msg = EmailMultiAlternatives(
+            subject=f"Order Confirmation - Order #{order.id}",
+            body="Thank you for your order!",
+            from_email="Dhanno Banno Ki Rasoi <dhannobannokirasoi@gmail.com>",
+            to=[request.user.email],
+        )
+        msg.attach_alternative(html_content, "text/html")
+        msg.send()
+
+        # return Response({"message": "Confirmation email sent."})
+        serializer = OrderSerializer(order)
+        return Response(serializer.data)
+
+    
+    except Order.DoesNotExist:
+        return Response({"error": "Order not found or not authorized"}, status=404)
+
+from django.core.cache import cache
+import json
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_unconfirmed_order(request, order_id):
+    try:
+        order = Order.objects.get(id=order_id, user=request.user)
+
+        if order.is_confirmed:
+            return Response({"error": "Cannot delete a confirmed order."}, status=400)
+
+        order.delete()
+        # ✅ Clear order_context from cache
+        session_id = f"user_{request.user.id}"
+        order_key = f"order_context_{session_id}"
+        cache.delete(order_key)
+        print(f"🧹 Cleared order_context for {session_id}")
+
+        # Cache key
+        chat_key = f"chat_history_user_{request.user.id}"
+        history = cache.get(chat_key, [])
+
+        # Append tool-style function message
+        history.append({
+            "role": "function",
+            "name": "delete_order",
+            "content": json.dumps({"message": f"❌ Order #{order_id} has been cancelled."})
+        })
+
+        # Append assistant follow-up message
+        history.append({
+            "role": "assistant",
+            "content": f"✅ Aapka order #{order_id} cancel ho gaya bhaiya. Naya order shuru karna ho toh bataiye!"
+        })
+
+        # Save updated history
+        cache.set(chat_key, history, timeout=600)
+
+
+        return Response({"message": f"Order #{order_id} deleted."})
+    
+    except Order.DoesNotExist:
+        return Response({"error": "Order not found or not authorized"}, status=404)

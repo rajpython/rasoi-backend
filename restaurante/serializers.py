@@ -152,6 +152,7 @@ class OrderSerializer(serializers.ModelSerializer):
             'delivery_time_slot',
             'payment_method', 
             'payment_status', 
+            'is_confirmed'
         ]
 
 
