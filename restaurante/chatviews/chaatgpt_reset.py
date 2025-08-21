@@ -3,19 +3,42 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
+
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def reset_chat_context(request):
     """
-    Clears the chat history and booking context for this user or session.
+    Clears chat/order/booking/lang/mode context for the normalized session_id.
+    Keys cleared:
+      - chat_history_{session_id}
+      - booking_context_{session_id}
+      - order_context_{session_id}
+      - lang_pref_{session_id}
+      - current_mode_{session_id}
     """
     user = request.user
-    session_id = request.session.session_key or request.session.create()
+    guest_id = request.headers.get("X-Guest-Id")
 
-    chat_key = f"chat_history_user_{user.id}" if user and user.is_authenticated else f"chat_history_guest_{session_id}"
-    booking_key = f"booking_context_user_{user.id}" if user and user.is_authenticated else f"booking_context_guest_{session_id}"
+    # Recreate the same normalized session_id you use everywhere else
+    if user.is_authenticated:
+        session_id = f"user_{user.id}"
+    elif guest_id:
+        session_id = f"guest_{guest_id}"
+    else:
+        if not request.session.session_key:
+            request.session.create()
+        session_id = f"session_{request.session.session_key}"
 
-    cache.delete(chat_key)
-    cache.delete(booking_key)
+    keys = [
+        f"chat_history_{session_id}",
+        f"booking_context_{session_id}",
+        f"order_context_{session_id}",
+        f"lang_pref_{session_id}",
+        f"chat_mode_{session_id}",
+    ]
+    cache.delete_many(keys)
 
-    return Response({"status": "ok", "message": "Chat history and booking context have been cleared."})
+    
+
+    return Response({"status": "ok", "message": "Chat and contexts cleared."})
+

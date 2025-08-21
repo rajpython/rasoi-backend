@@ -10,16 +10,27 @@ from restaurante.models import (
 )
 from datetime import datetime, date, timedelta
 from dateutil import parser
+import pytz
 
-  
+IST = pytz.timezone("Asia/Kolkata")
+
+
 def resolve_date_keyword(date_str):
+    if not date_str or not isinstance(date_str, str):
+        print(f"⚠️ Invalid date_str passed to resolver: {date_str}")
+        return date_str
+
     date_str = date_str.strip().lower()
-    today = datetime.today().date()
+
+    # 🔁 Get today's date in IST
+    now_ist = datetime.now(IST)
+    today = now_ist.date()
+    tomorrow = today + timedelta(days=1)
 
     if date_str == "today":
         return str(today)
     elif date_str == "tomorrow":
-        return str(today + timedelta(days=1))
+        return str(tomorrow)
     else:
         # First try strict YYYY-MM-DD
         try:
@@ -28,15 +39,13 @@ def resolve_date_keyword(date_str):
         except ValueError:
             pass
 
-        # 👇 NEW: parse natural formats like "12 August 2026" or "1 Aug"
-
+        # 👇 Parse fuzzy formats like "1 Aug", "12 August", etc.
         try:
-            return str(parser.parse(date_str, dayfirst=True).date())
+            parsed = parser.parse(date_str, dayfirst=True, default=datetime(today.year, 1, 1)).date()
+            return str(parsed)
         except (ValueError, OverflowError):
-            # If still unrecognized, return as-is
             print(f"⚠️ Unrecognized date string: {date_str}")
             return date_str
-
 
 
 def format_slot(slot):

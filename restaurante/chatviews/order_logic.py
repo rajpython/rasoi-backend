@@ -39,6 +39,11 @@ def handle_order_logic(response, user, session_id, order_context, order_prompt, 
             func_name = tool_call.function.name
             args = json.loads(tool_call.function.arguments or "{}")
 
+            # 🛠️ Inject missing required field
+
+            if func_name == "delete_order":
+                args["session_id"] = session_id
+
             # 🔍 If is_confirmed is missing or False in context, check DB just in case
             if not order_context.get("is_confirmed"):
                 cached_order_id = order_context.get("order_id")
@@ -76,17 +81,21 @@ def handle_order_logic(response, user, session_id, order_context, order_prompt, 
                     print(f"⚠️ Stale order_id in cache. Clearing.")
                     order_context.clear()
 
-            # Always override GPT's order_id with the cached one
             if func_name != "start_order":
                 cached_order_id = order_context.get("order_id")
                 if cached_order_id:
-                    args["order_id"] = cached_order_id
-                    print(f"🧠 Injected order_id: {cached_order_id}")
+                    func_obj = ORDER_TOOL_FUNCTION_MAP.get(func_name)
+                    func_sig = inspect.signature(func_obj).parameters if func_obj else {}
+                    if "order_id" in func_sig:
+                        args["order_id"] = cached_order_id
+                        print(f"🧠 Injected order_id: {cached_order_id}")
+                    else:
+                        print(f"ℹ️ Skipped order_id injection for {func_name} (no order_id param).")
                 else:
                     print(f"⚠️ No order_id found in context for {func_name}")
 
-
             # Normalize delivery_date
+            print(f"📦 Raw args passed to function {func_name}: {args}")
             if "delivery_date" in args:
                 original = args["delivery_date"]
                 resolved = resolve_date_keyword(original)
@@ -112,36 +121,55 @@ def handle_order_logic(response, user, session_id, order_context, order_prompt, 
 
             # Handle context updates
             if isinstance(result, dict):
+
+                # ---- SPECIAL: available_delivery_slots ----
+                if func_name == "available_delivery_slots":
+                    # Trust the tool result for the date
+                    ret_date = result.get("delivery_date")
+                    if isinstance(ret_date, str) and ret_date:
+                        order_context["delivery_date"] = resolve_date_keyword(ret_date)
+                    else:
+                        order_context["delivery_date"] = ret_date  # keep as-is (None or already a date)
+                    order_context["available_slots"] = result.get("available_slots", [])
+                    # Clear any previously chosen time when date changes / re-fetching slots
+                    order_context["delivery_time"] = None
+                    print(f"✅ Set delivery_date = {order_context['delivery_date']}, saved available_slots, reset delivery_time")
+
+
+                                # ---- SPECIAL: validate_delivery_time_slot ----
+                elif func_name == "validate_delivery_time":
+                    # Only persist time if validation succeeded
+                    if result.get("valid"):
+                        picked_time = args.get("delivery_time")
+                        order_context["delivery_time"] = picked_time
+                        print(f"✅ Stored validated delivery_time = {picked_time}")
+                    else:
+                        print("🚫 Time validation failed — delivery_time not updated.")
+
                 # Set order_id after start_order
                 if func_name == "start_order" and "order_id" in result:
                     order_context["order_id"] = result["order_id"]
                     print(f"💾 Stored order_id: {result['order_id']}")
 
+
                 expected_keys = {
                     "start_order": ["order_id"],
                     "add_order_item": ["items"],
-                    "revise_order_item": ["items"],   
-                    "available_delivery_slots_today": [],  # just lists; no state change
-                    "set_delivery_date": ["delivery_date"],
-                    "set_delivery_time_slot": ["delivery_time_slot"],
+                    "revise_order_item": ["items"],
+                    "available_delivery_slots": ["delivery_date","available_slots"],  # harmless; result won’t have this key
+                    "validate_delivery_time": ["delivery_time"],  # harmless; already set above
                     "set_delivery_type": ["delivery_type"],
                     "set_delivery_details": ["delivery_address", "delivery_city", "delivery_pin"],
                     "set_payment_method": ["payment_method"],
                     "checkout_order": [
                         "delivery_type","delivery_address","delivery_city","delivery_pin",
-                        "delivery_date","delivery_time_slot","payment_method","items"
+                        "delivery_date","delivery_time","payment_method","items"
                     ],
                 }.get(func_name, [])
 
-                # After expected_keys update, add:
-                if func_name == "set_delivery_date":
-                    # Clear any previously selected time slot so the model must ask again
-                    if order_context.get("delivery_time_slot"):
-                        order_context["delivery_time_slot"] = None
-                        print("🧼 Cleared stale delivery_time_slot due to date change.")
-
                 for key in expected_keys:
                     if key in result:
+                        print(f"📦 Resolving key = {key} from result: {result}")
                         val = resolve_date_keyword(result[key]) if key == "delivery_date" else result[key]
                         order_context[key] = val
                         print(f"✅ Context updated: {key} = {val}")
@@ -185,8 +213,7 @@ def handle_order_logic(response, user, session_id, order_context, order_prompt, 
                 # Re-run GPT with updated history
                 system_message = [{"role": "system", "content": order_prompt}
         ]
-                messages_with_result = system_message + history_messages  # system prompt
-                
+                messages_with_result = system_message + history_messages  # system prompt               
 
                 # Run GPT again to summarize the function result
                 followup = client.chat.completions.create(
@@ -208,7 +235,7 @@ def handle_order_logic(response, user, session_id, order_context, order_prompt, 
 
         # Fix missing assistant reply
         if assistant_reply is None:
-            assistant_reply = "🤖 Sorry, kuch samajh nahi aaya! Can you repeat?"
+            assistant_reply = "🤖 Sorry, I didn't get it! Can you please retry with some variation?"
 
         save_chat_turn(user, session_id, "assistant", assistant_reply)
         save_to_db_conversation(user, session_id, "user", message)

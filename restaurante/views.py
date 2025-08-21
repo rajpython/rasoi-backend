@@ -479,12 +479,18 @@ class CustomerReviewViewSet(viewsets.ModelViewSet):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def botorder_email(request, order_id):
+def botorder_confirm_email(request, order_id):
     try:
         order = Order.objects.get(id=order_id, user=request.user)
 
         order.is_confirmed = True  # ✅ Mark as confirmed
         order.save()
+
+        # ✅ Clear related cache keys
+        session_id = f"user_{request.user.id}"
+        cache.delete(f"order_context_{session_id}")
+        cache.delete(f"chat_history_{session_id}")
+
 
         order_items = OrderItem.objects.filter(order=order)
 
@@ -517,7 +523,10 @@ def botorder_email(request, order_id):
     
     except Order.DoesNotExist:
         return Response({"error": "Order not found or not authorized"}, status=404)
-
+    
+##############################
+# DELETE UNCONFIRMED ORDER
+##############################
 from django.core.cache import cache
 import json
 @api_view(['DELETE'])
@@ -561,3 +570,43 @@ def delete_unconfirmed_order(request, order_id):
     
     except Order.DoesNotExist:
         return Response({"error": "Order not found or not authorized"}, status=404)
+
+
+
+
+##################################
+# JWT SUPPLMENT FOR TRANSFERRRING GUTEST CACHE TO USER
+################################
+# views.py
+
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.core.cache import cache
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+
+        # 🔁 Migrate guest cache to user cache
+        request = self.context.get("request")
+        if request:
+            guest_id = request.headers.get("X-Guest-Id")
+            user = self.user
+
+            if guest_id:
+                guest_session_id = f"guest_{guest_id}"
+                user_session_id = f"user_{user.id}"
+
+                for key in ["chat_mode", "order_context", "booking_context", "lang_pref", "chat_history"]:
+                    guest_key = f"{key}_{guest_session_id}"
+                    user_key = f"{key}_{user_session_id}"
+
+                    value = cache.get(guest_key)
+                    if value:
+                        cache.set(user_key, value, timeout=600)
+                        cache.delete(guest_key)
+
+        return data
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer

@@ -19,8 +19,22 @@ from restaurante.utils import (
     get_chat_history, 
     save_chat_turn, 
     save_to_db_conversation)
+
 from .booking_logic import handle_booking_logic
 from .order_logic import handle_order_logic
+from django.conf import settings
+
+frontend_url = settings.FRONTEND_URL or "http://localhost:3000"
+# login_link = f'<a href="{frontend_url}/login" target="_blank">login</a>'
+# login_link = f'<a href="{frontend_url}/login" onclick="window.top.location.href=this.href; return false;">login</a>'
+
+# login_link = (
+#     '<a href="#" onclick="window.parent.postMessage({ type: \'navigate\', target: \'/login\' }, \'*\'); return false;">login</a>'
+# )
+# login_link = (
+#     '<a href="#" onclick="window.parent.postMessage({ type: \'NAVIGATE\', path: \'/login\' }, \'*\'); return false;">login</a>'
+# )
+login_link = f'<a href="/login" data-spa="true">login</a>'
 
 
 client = OpenAI(api_key=settings.OPENAI_API_KEY)
@@ -52,14 +66,19 @@ def chaatgpt_view(request):
     # history and user context
     user_context = get_user_context(user)
     menu_context = build_menu_context()
-    system_prompt = get_base_prompt_context(user_context, menu_context)
+    # system_prompt = get_base_prompt_context(user_context, menu_context)
     history_messages = get_chat_history(user, session_id)
     
 
     if current_mode == "booking":
         print("🔁 Continuing existing booking flow")
+
+        lang_pref = cache.get(f"lang_pref_{session_id}", None)
+        system_prompt = get_base_prompt_context(user_context, menu_context, lang_pref)
+    
         booking_context = cache.get(f"booking_context_{session_id}", {})
         dynamic_booking_prompt = get_dynamic_booking_context(booking_context)
+    
         booking_prompt = system_prompt + "\n\n" + dynamic_booking_prompt
         messages = [
             {"role": "system", "content": booking_prompt}
@@ -72,23 +91,39 @@ def chaatgpt_view(request):
             tools= AGENTIC_TOOLS,
             tool_choice="auto"
         )
+       
         return handle_booking_logic(
             response,
             user=user,
             session_id=session_id,
             booking_context=booking_context,
+            booking_prompt=booking_prompt,
             history_messages=history_messages,
+            client = client,
             message=message
         )
         
+        
     elif current_mode == "ordering":
-        # 🚧 Re-gate: if user is not authenticated, exit ordering mode immediately
+
         if not user.is_authenticated:
-            block_msg = (
-                "Online ordering ke liye login zaroori hai. "
-                "Pehle login kijiye aur 'done' likhiye. "
-                "Chahein to 'book table' keh kar reservation kar sakte hain, ya general baat cheet bhi kar sakte hain."
-            )
+        # 🔁 Read language preference
+            lang_pref = cache.get(f"lang_pref_{session_id}") or "hn"
+
+            
+            if lang_pref == "en":
+                block_msg = (
+                    f"Login is required for placing an online order. "
+                    f"Please {login_link} first, then return to me and confirm to continue. "
+                    f"If you prefer, you can say make a reservation, or just chat casually without logging in!"
+                )
+            else:
+                block_msg = (
+                    f"Online ordering ke liye {login_link} zaroori hai. "
+                    f"Pehle login kijiye aur wapas laut ke mere pas aiye aur confirm kariye. "
+                    f"Bina login ke agar aap chahein to 'book table' keh kar reservation kar sakte hain, ya general baat cheet bhi kar sakte hain."
+                )
+
             cache.delete(mode_key)  # reset current_mode to None
 
             # Nudge the model & keep logs consistent
@@ -103,6 +138,11 @@ def chaatgpt_view(request):
             return StreamingHttpResponse(iter([block_msg]), content_type="text/plain")
         #############
         print("🔁 Continuing existing ordering flow")
+
+
+        lang_pref = cache.get(f"lang_pref_{session_id}", None)
+        system_prompt = get_base_prompt_context(user_context, menu_context, lang_pref)
+    
         order_context = cache.get(f"order_context_{session_id}", {})
         dynamic_order_prompt = get_dynamic_order_context(order_context)
         auth_status = "LOGGED_IN" if (user and user.is_authenticated) else "GUEST"
@@ -139,7 +179,21 @@ def chaatgpt_view(request):
 
 
     # 🧭 Detect intent (booking or ordering)
-    intent = detect_intent(message)
+    # intent = detect_intent(message)
+
+    intent, lang_pref, ask = detect_intent(message, session_id)
+    
+    if ask:
+        # send the language question / confirmation
+        save_chat_turn(user, session_id, "user", message)
+        save_chat_turn(user, session_id, "assistant", ask)
+        save_to_db_conversation(user, session_id, "user", message)
+        save_to_db_conversation(user, session_id, "assistant", ask)
+        return StreamingHttpResponse(iter([ask]), content_type="text/plain")
+    
+    system_prompt = get_base_prompt_context(user_context, menu_context, lang_pref)
+    # else proceed with intent branches; pass lang_pref into base prompt
+
     if intent == "booking":
         cache.set(mode_key, "booking", timeout=600)
         print("🔍 Intent detected: Booking")
@@ -175,21 +229,35 @@ def chaatgpt_view(request):
             user=user,
             session_id=session_id,
             booking_context=booking_context,
+            booking_prompt=booking_prompt,
             history_messages=history_messages,
+            client = client,
             message=message
         )
+        
 
     elif intent == "ordering":
         ######
         # 🚧 Auth gate: do not enter ordering mode unless logged in
+
         if not user.is_authenticated:
-            block_msg = (
-                "Online ordering ke liye login zaroori hai. "
-                "Pehle login kijiye aur 'done' likhiye. "
-                "Aap 'book table' keh kar reservation bhi kar sakte hain, ya general baat cheet kar sakte hain."
-            )
-            # Ensure we are NOT stuck in ordering mode
-            cache.delete(mode_key)  # defensive reset
+            # 🔁 Read language preference
+            lang_pref = cache.get(f"lang_pref_{session_id}") or "hn"
+
+            if lang_pref == "en":
+                block_msg = (
+                    f"Login is required for placing an online order. "
+                    f"Please {login_link} first, then return to me and confirm to continue. "
+                    f"If you prefer, you can say make a reservation, or just chat casually without logging in!"
+                )
+            else:
+                block_msg = (
+                    f"Online ordering ke liye {login_link} zaroori hai. "
+                    f"Pehle login kijiye aur wapas laut ke mere pas aiye aur confirm kariye. "
+                    f"Bina login ke agar aap chahein to 'book table' keh kar reservation kar sakte hain, ya general baat cheet bhi kar sakte hain."
+                )
+
+            cache.delete(mode_key)  # reset current_mode to None
 
             history_messages.append({
                 "role": "function",
@@ -207,17 +275,21 @@ def chaatgpt_view(request):
         cache.set(mode_key, "ordering", timeout=600)
         print("🔍 Intent detected: Ordering")
         order_key = f"order_context_{session_id}"
+
         order_context = cache.get(order_key, {
         "order_id": None,
         "items": [],
         "delivery_date": None,
-        "delivery_time_slot": None,
+        "delivery_time": None,
         "delivery_type": None,
         "delivery_address": None,
         "delivery_city": None,
         "delivery_pin": None,
-        "payment_method": None, 
-        "is_confirmed": False
+        "payment_method": None,
+        "is_confirmed": False,
+
+        # ✅ NEW: Slot validation support
+        "available_slots": None
         })
         # ✅ Diagnostic: Cache Check
         raw_value = cache.get(order_key)

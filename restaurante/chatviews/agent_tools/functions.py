@@ -7,22 +7,30 @@ from restaurante.views import BookingViewSet
 from dateutil import parser  # requires `pip install python-dateutil`
 from restaurante.utils import format_slot, friendly_date_string
 from django.core.cache import cache
+import pytz
+
+IST = pytz.timezone("Asia/Kolkata")
+
 
 def parse_date_string(date_str):
-    today = datetime.today()
+    ist_now = datetime.now(IST)
     try:
-        # Parse the string into a datetime, but default to THIS year first
-        date = parser.parse(date_str, fuzzy=True, default=datetime(today.year, 1, 1))
+        # Use IST-based default for parsing fuzzy strings
+        default_dt = datetime(ist_now.year, 1, 1, tzinfo=IST)
+        date = parser.parse(date_str, fuzzy=True, default=default_dt)
 
-        # If year is LESS than today, or same year but month/day is before today, bump to next year
-        if (date.year < today.year) or (date.year == today.year and date.month < today.month) or \
-           (date.year == today.year and date.month == today.month and date.day < today.day):
-            date = date.replace(year=today.year + 1)
+        # Ensure parsed date is in IST
+        date = date.astimezone(IST)
+
+        # Year rollover logic
+        if (date.year < ist_now.year) or \
+           (date.year == ist_now.year and date.month < ist_now.month) or \
+           (date.year == ist_now.year and date.month == ist_now.month and date.day < ist_now.day):
+            date = date.replace(year=ist_now.year + 1)
 
         return date.date()
     except Exception:
         raise ValueError("Could not understand the date. Please provide something like 'July 25' or 'next Friday'.")
-
 
 
 def get_available_booking_times(selected_date):
@@ -31,6 +39,7 @@ def get_available_booking_times(selected_date):
     """
     # Parse natural language to date string
     date_obj = parse_date_string(selected_date)
+    # date_obj = selected_date
     booked = Booking.objects.filter(
         reservation_date=date_obj
     ).values_list("reservation_time", flat=True)
@@ -54,12 +63,12 @@ def validate_booking_time(selected_time, available_slots):
     if is_valid:
         return {
             "valid": True,
-            "message": f"Are wah! {selected_time} slot available hai 🎉. Confirm?"
+            "message": f"{selected_time} is available 🎉. Confirm?"
         }
     else:
         return {
             "valid": False,
-            "message": f"Arey sorry yaar 😅, {selected_time} time available nahi hai. Koi aur time try karo?"
+            "message": f"Shoot 😅, {selected_time} time not available. Try another please?"
         }
 
 def create_booking(
@@ -71,6 +80,7 @@ def create_booking(
     """
     # Parse the date
     date_obj = parse_date_string(selected_date)
+    # date_obj = selected_date
 
     # Fallback to user email
     if (not email or email == "") and user and user.is_authenticated:
@@ -119,29 +129,6 @@ TOOL_FUNCTION_MAP = {
     "cancel_booking": cancel_booking,
 }
 
-# ===== Tool function implementations (simple; booking_logic persists) =====
-
-# def set_no_of_guests(no_of_guests: int):
-#     return {"no_of_guests": no_of_guests}
-
-# def _normalize_occasion(occasion: str) -> str:
-#     o = (occasion or "").strip().lower()
-#     if o in {"birthday", "bday"}:
-#         return "Birthday"
-#     if o in {"anniversary", "anniv"}:
-#         return "Anniversary"
-#     if o in {"other", "none", "na"}:
-#         return "Other"
-#     # short free-text fallback
-#     return occasion.strip()[:64] or "Other"
-
-# def set_occasion(occasion: str):
-#     return {"occasion": _normalize_occasion(occasion)}
-
-# def set_email(email: str):
-#     # pydantic EmailStr in schema already validates; just echo back
-#     return {"email": email}
-
 
 def set_no_of_guests(no_of_guests: int):
     """
@@ -151,17 +138,17 @@ def set_no_of_guests(no_of_guests: int):
         n = int(no_of_guests)
     except (TypeError, ValueError):
         return {
-            "message": "Guests ka number samajh nahi aaya. Kripya ek poora number batayein (e.g., 2, 4, 6)."
+            "message": "Didn't understand. Please choose integers (e.g., 2, 4, 6)."
         }
 
     if n <= 0:
         return {
-            "message": "Guests kam se kam 1 hona chahiye. Kripya sahi number batayein."
+            "message": "At least one guest needed, we can't let you steal our guests!"
         }
 
     return {
         "no_of_guests": n,
-        "message": f"Noted — {n} guests. Okay?"
+        "message": f"Alright, {n} guests. Proceed further?"
     }
 
 
@@ -185,25 +172,10 @@ def set_occasion(occasion: str):
     normalized = _normalize_occasion(occasion)
     return {
         "occasion": normalized,
-        "message": f"Occasion set: {normalized}. Okay?"
+        "message": f"{normalized} it is! Move on?"
     }
 
 
-# def set_email(email: str):
-#     """
-#     Persist email and nudge towards final confirmation. (Create-booking summary
-#     will be produced by the model from context; we keep this message short.)
-#     """
-#     # Schema already validates EmailStr; this is just a friendly fallback.
-#     if not email or "@" not in email:
-#         return {
-#             "message": "Yeh email sahi nahi lag raha. Kripya ek valid email dijiye (e.g., name@example.com)."
-#         }
-
-#     return {
-#         "email": email.strip(),
-#         "message": "Email save ho gaya. Okay?"
-#     }
 
 def set_email(email: str):
     """
@@ -212,12 +184,12 @@ def set_email(email: str):
     """
     email_clean = (email or "").strip()
     if "@" not in email_clean:
-        return {"message": "Yeh email sahi nahi lag raha. Kripya ek valid email dijiye (e.g., name@example.com)."}
+        return {"message": "Please provide a valid email(e.g., name@example.com)."}
 
     return {
         "email": email_clean,
         # use concatenation to avoid any f/format confusion or later .format() passes
-        "message": "Email " + email_clean + " set ho gaya. Okay?"
+        "message": "Email " + email_clean + " set. All good?"
     }
 
 

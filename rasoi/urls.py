@@ -24,6 +24,7 @@ from rest_framework.authtoken.views import obtain_auth_token
 
 from django.conf import settings
 from django.conf.urls.static import static
+from restaurante.views import CustomTokenObtainPairView
 
 # Router for UserViewSet
 user_router = DefaultRouter()
@@ -36,6 +37,7 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.authtoken')),
+    path("auth/jwt/create/", CustomTokenObtainPairView.as_view(), name="jwt-create"),
     path('auth/', include('djoser.urls.jwt')),     # <-- JWT endpoints: /j
     path('api-token-auth/', obtain_auth_token),
 ]

@@ -6,7 +6,7 @@ from restaurante.utils import save_chat_turn, save_to_db_conversation
 from .agent_tools import TOOL_FUNCTION_MAP
 
 
-def handle_booking_logic(response, user, session_id, booking_context, history_messages, message):
+def handle_booking_logic(response, user, session_id, booking_context,booking_prompt, history_messages, client, message):
     booking_key = f"booking_context_{session_id}"  # reconstructed here
     try:
         choice = response.choices[0]
@@ -23,9 +23,6 @@ def handle_booking_logic(response, user, session_id, booking_context, history_me
 
         print(f"\n=== 📝 GPT REPLY (text) ===\n{assistant_reply}")
         print(f"\n=== 🛠 TOOL CALLS === {tool_calls}")
-
-        get_available_times = TOOL_FUNCTION_MAP.get("get_available_booking_times")
-
 
         for tool_call in tool_calls:
             func_name = tool_call.function.name
@@ -47,35 +44,33 @@ def handle_booking_logic(response, user, session_id, booking_context, history_me
                 # safe to call function
 
             elif func_name == "validate_booking_time":
-                
-                # Step 1: Extract selected_time and selected_date from function call
-                new_date = args.get("selected_date")
+                # Step 1: Extract selected_time and available_slots
                 new_time = args.get("selected_time")
+                available_slots = args.get("available_slots")
 
-                # Step 2: Check if a new date is provided
-                if new_date and new_date != booking_context.get("selected_date"):
-                    print(f"📅 Detected NEW DATE in validate_booking_time: {new_date}")
-                    
-                    # Forcefully re-fetch available slots for new date
-                    updated_slots = get_available_times(new_date)
-                    booking_context["selected_date"] = new_date
-                    booking_context["available_slots"] = updated_slots.get("available_slots", [])
-                    booking_context["selected_time"] = None  # Clear selected_time
-                    booking_context["slots_fetched"] = True
+                # Step 2: If available_slots not in args (model forgot), inject from context
+                if available_slots is None:
 
-                    cache.set(booking_key, booking_context, timeout=600)
-                    print(f"✅ CONTEXT UPDATED due to implicit date change: {booking_context}")
+                    args["selected_time"] = args.get("selected_time") or booking_context.get("selected_time")
 
-                    # Don't proceed with validation now. Let LLM handle next step with fresh slots.
-                    return  # ⛔ Important: Stop here to avoid using wrong validation
-                
+                    # Safety: don't allow booking to proceed with an unavailable time
+                    if args["selected_time"] not in booking_context.get("available_slots", []):
+                        print("🚫 Attempted to book with an invalid or outdated selected_time.")
+                        return {
+                            "message": "Booking time is no longer available. Please pick a new slot."
+                        }
+
+                    print("⚠️ Injected available_slots from context into validate_booking_time")
+
+                # Step 3: Call the function
                 result = func(**args)
-                    
-                # Step 3: Only if no new date, proceed with validation result
+
+                # Step 4: If valid, persist time
                 if isinstance(result, dict) and result.get("valid"):
                     booking_context["selected_time"] = new_time
                     cache.set(booking_key, booking_context, timeout=600)
                     print(f"✅ UPDATED CONTEXT AFTER TIME VALIDATION: {booking_context}")
+
 
             elif func_name == "create_booking":
                 # Merge args with context before calling the function
@@ -138,19 +133,38 @@ def handle_booking_logic(response, user, session_id, booking_context, history_me
 
                 # --- reply to GPT ---
 
-            history_messages.append({
-                "role": "function",
-                "name": func_name,
-                "content": json.dumps(result)
-            })
+
+            function_message = {"role": "function", "name": func_name, "content": json.dumps(result)}
+            history_messages.append(function_message)
 
             save_chat_turn(user, session_id, role="function", message=f"{result}", name=func_name)
             save_to_db_conversation(user, session_id, role="function", message=f"{func_name}: {result}")
-            # return StreamingHttpResponse(iter([str(result)]), content_type='text/plain')
-            if isinstance(result, dict) and "message" in result:
-                return StreamingHttpResponse(iter([result["message"]]), content_type='text/plain')
-            else:
+
+            # 🚨 Short-circuit if checkout_order — stream iframe message directly
+            if func_name == "create_booking":
+                # 🧹 Clear chat mode — flow complete
+                # cache.delete(f"chat_mode_{session_id}")
+                # print(f"🧹 Cleared mode after confirmed booking.")
                 return StreamingHttpResponse(iter([str(result)]), content_type='text/plain')
+
+            # Re-run GPT with updated history
+            system_message = [{"role": "system", "content": booking_prompt}
+        ]
+            messages_with_result = system_message + history_messages  # system prompt
+
+                # Run GPT again to summarize the function result
+            followup = client.chat.completions.create(
+                model="gpt-4o",
+                messages=messages_with_result,
+                tools=[],  # ✅ Add this
+                tool_choice="none"  # ✅ Allowed only if tools is explicitly []
+            )
+            followup_reply = followup.choices[0].message.content or "🤖 Summary not available!"
+
+            save_chat_turn(user, session_id, "assistant", followup_reply)
+            save_to_db_conversation(user, session_id, "assistant", followup_reply)
+
+            return StreamingHttpResponse(iter([followup_reply]), content_type='text/plain')
 
 
         # normal conversation branch
@@ -165,21 +179,3 @@ def handle_booking_logic(response, user, session_id, booking_context, history_me
     except Exception as e:
         print(f"❌ Exception: {e}")
         return StreamingHttpResponse(iter([f"⚠️ Error occurred: {str(e)}"]), content_type='text/plain')
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
