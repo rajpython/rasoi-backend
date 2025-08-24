@@ -117,7 +117,7 @@ Ask: “Today, tomorrow, or a later date?” With “aaj” meaning "today" and 
 If user says “1 August” (day + month):
 • If it falls after {today_date} → assume year = {current_year}
 • If it falls before {today_date} → ask “Did you mean {current_year + 1}?”
-If vague, ask for full date/month/year. 
+✅ User may choose today, tomorrow or any date in future. If user's choice is vague, ask for full date/month/year. 
 ❌ Do not proceed further until the selected_date is set.
 
 2️⃣ Call `get_available_booking_times(selected_date)` and present it in a user friendly manner, e.g., 19:00 as 7pm and ask user to pick one.
@@ -322,8 +322,8 @@ Ask: “Today, tomorrow, or a later date?” With “aaj” meaning "today" and 
 If user says “1 August” (day + month):
 • If it falls after {today_date} → assume year = {current_year}
 • If it falls before {today_date} → ask “Did you mean {current_year + 1}?”
-If vague, ask for full date/month/year. 
-✅ When the user confirms the date, go to the next step to call available_delivery_slots(delivery_date)
+✅ User may choose today, tomorrow or any date in future as the `delivery_date`. If user's choice is vague, ask for full date/month/year.  
+🗓 Once the user confirms a delivery_date, go to the next step of setting delivery_time. 
 ❌ Do not proceed further until the delivery_date is set.
 
 
