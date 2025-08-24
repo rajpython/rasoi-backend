@@ -4,13 +4,23 @@ from datetime import datetime
 from typing import Optional
 
 import pytz
+import logging
 
 IST = pytz.timezone("Asia/Kolkata")
-ist_now = datetime.now(IST)
+# ist_now = datetime.now(IST)
 
-current_year = ist_now.year
-current_date = ist_now.date()
-today_date = current_date.strftime("%-d %B")  # e.g., '17 August'
+# current_year = ist_now.year
+# current_date = ist_now.date()
+# today_date = current_date.strftime("%-d %B")  # e.g., '17 August'
+
+def get_today_anchor():
+    now_ist = datetime.now(IST)
+    current_year = now_ist.year
+    today_date = f"{now_ist.day} {now_ist.strftime('%B')}"  # e.g., "24 August"
+    return current_year, today_date
+
+
+logger = logging.getLogger(__name__)  # one-time module logger
 
 # current_year = datetime.now().year
 # current_date = datetime.now().date()
@@ -55,6 +65,10 @@ def build_menu_context():
 
 
 def get_dynamic_booking_context(booking_context):
+    
+    current_year, today_date = get_today_anchor()
+     # 👇 LOG *right after* computing anchors, before returning the prompt
+    logger.info("DATE_ANCHOR used: today=%s, year=%s", today_date, current_year)
         
     booking_context_str = f"""
     CURRENT BOOKING CONTEXT:
@@ -244,6 +258,10 @@ USER CONTEXT:
 
 
 def get_dynamic_order_context(order_context):
+    
+    current_year, today_date = get_today_anchor()
+     # 👇 LOG *right after* computing anchors, before returning the prompt
+    logger.info("DATE_ANCHOR used: today=%s, year=%s", today_date, current_year)
 
     
     order_context_str = f"""
